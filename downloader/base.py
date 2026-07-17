@@ -93,6 +93,15 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
+        # YouTube's *web* client is the one that most often demands
+        # sign-in/bot verification. The android and tv clients talk to a
+        # different backend API that generally doesn't require this, so we
+        # ask yt-dlp to try them first and only fall back to web. This
+        # resolves most "Sign in to confirm..." errors without any cookies
+        # at all. (If a video genuinely needs an authenticated session —
+        # e.g. private/members-only — cookies are still the correct fix,
+        # see cfg.cookie_source below.)
+        "extractor_args": {"youtube": {"player_client": ["android", "tv", "web"]}},
     }
     if cfg.proxy:
         opts["proxy"] = cfg.proxy
