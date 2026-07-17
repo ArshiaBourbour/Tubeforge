@@ -1,0 +1,15 @@
+{
+  "download_folder": "~/Downloads/TubeForge",
+  "video_quality": "1080p",
+  "audio_quality": "192kbps",
+  "audio_format": "mp3",
+  "theme": "midnight",
+  "concurrent_downloads": 3,
+  "filename_template": "%(title)s.%(ext)s",
+  "proxy": "",
+  "language": "en",
+  "check_for_updates": true,
+  "embed_thumbnail": true,
+  "embed_subtitles": false,
+  "write_metadata": true
+}
