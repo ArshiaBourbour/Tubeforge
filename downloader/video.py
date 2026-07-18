@@ -12,6 +12,7 @@ import yt_dlp
 
 from config import Config
 from downloader.base import DownloadError, ProgressCallback, VideoInfo, base_opts, friendly_message, build_progress_hook, fetch_info
+from downloader.base import _no_formats_message
 from utils.logger import get_logger
 
 log = get_logger("downloader.video")
@@ -101,7 +102,7 @@ def download_video(
                     final_path = ydl.prepare_filename(info)
             except yt_dlp.utils.DownloadError as exc2:
                 log.error("Video download retry failed for %s: %s", url, exc2)
-                raise DownloadError(friendly_message(str(exc2)), cause=exc2) from exc2
+                raise DownloadError(_no_formats_message(str(exc2)), cause=exc2) from exc2
         else:
             log.error("Video download failed for %s: %s", url, exc)
             raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
