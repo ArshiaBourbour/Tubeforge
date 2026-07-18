@@ -83,6 +83,9 @@ class _SilentLogger:
 
 
 def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> dict[str, Any]:
+    source = getattr(cfg, "cookie_source", "none")
+    has_cookies = source and source != "none"
+
     opts: dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
@@ -94,13 +97,23 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
-        # The web client is the one most often hit by YouTube's bot/sign-in
-        # check. Trying android/tv first sometimes avoids it, but as of 2026
-        # this is not reliable on its own — cookies (cfg.cookie_source) are
-        # the actual fix when this still fails. Keep this as a cheap first
-        # attempt, not a substitute for authentication.
-        "extractor_args": {"youtube": {"player_client": ["android", "tv", "web"]}},
     }
+
+    if has_cookies:
+        # With real cookies attached, the web client is authenticated and
+        # exposes the full format list (all resolutions/codecs). Forcing
+        # the restricted android/tv clients on top of that only shrinks
+        # the available formats and can cause "Requested format is not
+        # available" errors — so we leave client selection to yt-dlp's
+        # default here.
+        pass
+    else:
+        # No cookies configured: the web client is the one YouTube's
+        # bot-check hits hardest. Trying android/tv first is a cheap,
+        # cookie-free first attempt — it won't fix every video, but it's
+        # a reasonable default before the user sets up cookies.
+        opts["extractor_args"] = {"youtube": {"player_client": ["android", "tv", "web"]}}
+
     if cfg.proxy:
         opts["proxy"] = cfg.proxy
     if progress_hook is not None:
@@ -109,7 +122,6 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
     # Cookie source: lets yt-dlp present an authenticated session, which
     # resolves most "Sign in to confirm..." / bot-check walls that YouTube
     # now shows even for ordinary public videos.
-    source = getattr(cfg, "cookie_source", "none")
     if source and source not in ("none", "file"):
         opts["cookiesfrombrowser"] = (source,)
     elif source == "file" and getattr(cfg, "cookie_file_path", ""):
