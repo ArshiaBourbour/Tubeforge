@@ -102,7 +102,7 @@ class App:
             except KeyboardInterrupt:
                 ui.show_warning(self.console, "Operation canceled.")
             except DownloadError as exc:
-                ui.show_error(self.console, str(exc))
+                ui.show_error(self.console, str(exc), detail=exc.detail)
             except Exception as exc:  # pragma: no cover - last line of defense
                 log.exception("Unhandled error in menu handler")
                 ui.show_error(self.console, f"Something went wrong: {exc}")
@@ -338,11 +338,14 @@ class App:
             [
                 "Download folder", "Video quality", "Audio quality", "Audio format",
                 "Theme", "Concurrent downloads", "Filename template", "Proxy", "Language",
-                "Cookie Source", "Back",
+                "Cookie Source", "Update yt-dlp", "Back",
             ],
             default="Back",
         )
         if field == "Back":
+            return
+        if field == "Update yt-dlp":
+            self._handle_update_ytdlp()
             return
 
         if field == "Download folder":
@@ -380,6 +383,39 @@ class App:
 
         self.cfg.save()
         ui.show_success(self.console, "Settings updated.")
+
+    def _handle_update_ytdlp(self) -> None:
+        """Run 'pip install -U yt-dlp' from inside the app.
+
+        Outdated yt-dlp is the single most common cause of YouTube's
+        sign-in/bot-check errors, since YouTube changes its site frequently
+        and yt-dlp ships near-daily fixes for it.
+        """
+        import subprocess
+        import sys as _sys
+
+        with self.console.status("[info]Updating yt-dlp (pip install -U yt-dlp)...[/info]", spinner="dots"):
+            try:
+                result = subprocess.run(
+                    [_sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"],
+                    capture_output=True, text=True, timeout=120,
+                )
+            except Exception as exc:
+                ui.show_error(self.console, f"Could not run pip: {exc}")
+                return
+
+        if result.returncode == 0:
+            last_line = next((l for l in reversed(result.stdout.strip().splitlines()) if l.strip()), "Done.")
+            ui.show_success(self.console, f"yt-dlp updated.\n{last_line}\n\nRestart TubeForge for the update to take effect.")
+        elif "externally-managed-environment" in result.stderr:
+            ui.show_error(
+                self.console,
+                "Your system Python blocks direct pip installs (PEP 668). Fix by either:\n"
+                "  • Running TubeForge inside a virtual environment (see README → Installation), or\n"
+                "  • Running manually: pip install --upgrade yt-dlp --break-system-packages",
+            )
+        else:
+            ui.show_error(self.console, f"pip install failed:\n{result.stderr.strip()[-500:]}")
 
     def _settings_table(self) -> Table:
         table = Table.grid(padding=(0, 2))
@@ -452,7 +488,7 @@ class App:
                 return download_call(on_progress)
             except DownloadError as exc:
                 progress.stop()
-                ui.show_error(self.console, str(exc))
+                ui.show_error(self.console, str(exc), detail=exc.detail)
                 return None
 
     def _record_history(self, info, dtype: DownloadType, path: Path, out_dir: str) -> None:
