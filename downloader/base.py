@@ -84,7 +84,6 @@ class _SilentLogger:
 
 def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> dict[str, Any]:
     source = getattr(cfg, "cookie_source", "none")
-    has_cookies = source and source != "none"
 
     opts: dict[str, Any] = {
         "quiet": True,
@@ -97,22 +96,15 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
+        # YouTube is currently (2026) rolling out "SABR" streaming, which
+        # strips download URLs from the *web* client's formats entirely —
+        # this happens independent of sign-in/cookies and shows up as
+        # "Requested format is not available" even for ordinary public
+        # videos. The android client is generally not subject to this, so
+        # we always try it first; web/tv are kept as fallbacks in case a
+        # given video's formats are only exposed there.
+        "extractor_args": {"youtube": {"player_client": ["android", "web", "tv"]}},
     }
-
-    if has_cookies:
-        # With real cookies attached, the web client is authenticated and
-        # exposes the full format list (all resolutions/codecs). Forcing
-        # the restricted android/tv clients on top of that only shrinks
-        # the available formats and can cause "Requested format is not
-        # available" errors — so we leave client selection to yt-dlp's
-        # default here.
-        pass
-    else:
-        # No cookies configured: the web client is the one YouTube's
-        # bot-check hits hardest. Trying android/tv first is a cheap,
-        # cookie-free first attempt — it won't fix every video, but it's
-        # a reasonable default before the user sets up cookies.
-        opts["extractor_args"] = {"youtube": {"player_client": ["android", "tv", "web"]}}
 
     if cfg.proxy:
         opts["proxy"] = cfg.proxy
@@ -121,7 +113,8 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
 
     # Cookie source: lets yt-dlp present an authenticated session, which
     # resolves most "Sign in to confirm..." / bot-check walls that YouTube
-    # now shows even for ordinary public videos.
+    # now shows even for ordinary public videos. This is a *separate*
+    # concern from the SABR/format issue above — both can be needed.
     if source and source not in ("none", "file"):
         opts["cookiesfrombrowser"] = (source,)
     elif source == "file" and getattr(cfg, "cookie_file_path", ""):
@@ -145,23 +138,13 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
             data = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as exc:
         if "requested format is not available" in str(exc).lower():
-            # Even metadata-only extraction resolves a default format
-            # selector internally. Some videos (ended livestreams, certain
-            # restricted uploads) don't have anything matching that
-            # default — retry once with the most permissive selector
-            # purely to be able to read the metadata.
             log.warning("Default format unavailable while fetching info for %s, retrying with 'format=best'", url)
             opts["format"] = "best"
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
                     data = ydl.extract_info(url, download=False)
             except yt_dlp.utils.DownloadError as exc2:
-                raise DownloadError(
-                    "This video has no downloadable formats available (it may be a live "
-                    "stream still in progress, a members-only/DRM-protected upload, or "
-                    "otherwise restricted).",
-                    cause=exc2,
-                ) from exc2
+                raise DownloadError(_no_formats_message(str(exc2)), cause=exc2) from exc2
         else:
             raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
     except Exception as exc:  # pragma: no cover - defensive catch-all
@@ -187,6 +170,33 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
         playlist_count=data.get("playlist_count") or (len(entries) if entries else None),
         entries=entries,
         raw=data,
+    )
+
+
+def _no_formats_message(raw_error: str) -> str:
+    """
+    Used when even the most permissive format selector fails after trying
+    android/web/tv clients. As of 2026, this is most often caused by
+    YouTube's "SABR" streaming rollout stripping download URLs from the
+    web client's formats — a widespread, currently ongoing yt-dlp/YouTube
+    issue, not something specific to this app or this video. Give an
+    accurate explanation rather than guessing DRM/livestream.
+    """
+    lowered = raw_error.lower()
+    if "sabr" in lowered or "only images are available" in lowered or "missing a url" in lowered:
+        return (
+            "YouTube is currently forcing a newer streaming method (SABR) that yt-dlp's "
+            "extractors haven't fully caught up with yet for this video — this is a known, "
+            "ongoing issue affecting yt-dlp broadly right now, not specific to this video or "
+            "this app. Try: (1) update yt-dlp to the latest version — 'pip install -U yt-dlp' "
+            "(the project patches around this frequently), (2) install Node.js so yt-dlp can "
+            "run its JS challenge solver, (3) if it still fails, this specific video may need "
+            "to wait for yt-dlp's next fix — check https://github.com/yt-dlp/yt-dlp/issues for "
+            "the current status."
+        )
+    return (
+        "This video has no downloadable formats available (it may be a live stream still in "
+        "progress, a members-only/DRM-protected upload, or otherwise restricted)."
     )
 
 
