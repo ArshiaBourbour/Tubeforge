@@ -28,9 +28,10 @@ ProgressCallback = Callable[[dict], None]
 class DownloadError(Exception):
     """Raised for any failure we want the UI to show as a friendly message."""
 
-    def __init__(self, message: str, cause: Exception | None = None):
+    def __init__(self, message: str, cause: Exception | None = None, detail: str | None = None):
         super().__init__(message)
         self.cause = cause
+        self.detail = detail or (str(cause).splitlines()[-1] if cause else None)
 
 
 @dataclass
@@ -93,14 +94,11 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
-        # YouTube's *web* client is the one that most often demands
-        # sign-in/bot verification. The android and tv clients talk to a
-        # different backend API that generally doesn't require this, so we
-        # ask yt-dlp to try them first and only fall back to web. This
-        # resolves most "Sign in to confirm..." errors without any cookies
-        # at all. (If a video genuinely needs an authenticated session —
-        # e.g. private/members-only — cookies are still the correct fix,
-        # see cfg.cookie_source below.)
+        # The web client is the one most often hit by YouTube's bot/sign-in
+        # check. Trying android/tv first sometimes avoids it, but as of 2026
+        # this is not reliable on its own — cookies (cfg.cookie_source) are
+        # the actual fix when this still fails. Keep this as a cheap first
+        # attempt, not a substitute for authentication.
         "extractor_args": {"youtube": {"player_client": ["android", "tv", "web"]}},
     }
     if cfg.proxy:
@@ -174,7 +172,10 @@ def friendly_message(raw_error: str) -> str:
         ("confirm your age", "This video is age-restricted and cannot be accessed without authentication."),
         ("private video", "This video is private and cannot be downloaded."),
         ("video unavailable", "This video is unavailable (it may have been removed or region-blocked)."),
-        ("sign in to confirm", "YouTube is asking for sign-in verification for this video. Go to Settings → Cookie Source and select your browser (or a cookies.txt file) to fix this."),
+        ("could not find", "TubeForge couldn't read cookies from the selected browser (it may not be installed, or its cookie database is locked/encrypted on this OS). Try a different browser in Settings → Cookie Source, or use the 'file' option with an exported cookies.txt instead."),
+        ("could not copy", "TubeForge couldn't read cookies from the selected browser — make sure the browser is completely closed (not just minimized) and try again."),
+        ("decrypt", "TubeForge couldn't decrypt the selected browser's cookies on this system. Use the 'file' option in Settings → Cookie Source with an exported cookies.txt instead."),
+        ("sign in to confirm", "YouTube's bot-check is blocking this download. Fix, in order: (1) update yt-dlp — 'pip install -U yt-dlp', (2) in Settings → Cookie Source, pick your browser and make sure it's fully closed and logged into YouTube (try Firefox if Chrome fails), (3) if still blocked, export a cookies.txt file and select it under Cookie Source → file, (4) turn off any VPN/proxy."),
         ("copyright", "This video was taken down due to a copyright claim."),
         ("certificate verify failed", "A secure connection could not be established (SSL certificate error). Check your network/proxy settings."),
         ("name or service not known", "Could not resolve the network address. Check your internet connection."),
