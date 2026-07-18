@@ -106,6 +106,7 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "no_warnings": True,
         "noprogress": True,
         "ignoreerrors": False,
+        "verbose": True,
         "logger": _SilentLogger(),
         "outtmpl": str(Path(cfg.download_folder).expanduser() / cfg.filename_template),
         "restrictfilenames": False,
@@ -126,6 +127,12 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         # this, playback signature solving silently fails and only
         # storyboard/thumbnail "formats" are returned.
         "remote_components": ["ejs:github", "ejs:npm"],
+        # yt-dlp only enables the "deno" JS runtime by default for solving
+        # YouTube's playback signature challenge — it will NOT use Node.js
+        # even if it's installed on PATH unless explicitly told to. Enable
+        # every commonly-available runtime here; yt-dlp picks whichever is
+        # actually present, in priority order (deno > node > quickjs > bun).
+        "js_runtimes": {"deno": {}, "node": {}, "quickjs": {}, "bun": {}},
     }
 
     if cfg.proxy:
@@ -198,8 +205,8 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
     )
 
 
-def _tail(text: str, max_lines: int = 6) -> str:
-    """Return the last few non-empty lines of a captured log, for display."""
+def _tail(text: str, max_lines: int = 14) -> str:
+    """Return the last several non-empty lines of a captured log, for display."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     return "\n".join(lines[-max_lines:])
 
