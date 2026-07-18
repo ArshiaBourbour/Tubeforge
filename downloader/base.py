@@ -144,7 +144,26 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
         with yt_dlp.YoutubeDL(opts) as ydl:
             data = ydl.extract_info(url, download=False)
     except yt_dlp.utils.DownloadError as exc:
-        raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
+        if "requested format is not available" in str(exc).lower():
+            # Even metadata-only extraction resolves a default format
+            # selector internally. Some videos (ended livestreams, certain
+            # restricted uploads) don't have anything matching that
+            # default — retry once with the most permissive selector
+            # purely to be able to read the metadata.
+            log.warning("Default format unavailable while fetching info for %s, retrying with 'format=best'", url)
+            opts["format"] = "best"
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    data = ydl.extract_info(url, download=False)
+            except yt_dlp.utils.DownloadError as exc2:
+                raise DownloadError(
+                    "This video has no downloadable formats available (it may be a live "
+                    "stream still in progress, a members-only/DRM-protected upload, or "
+                    "otherwise restricted).",
+                    cause=exc2,
+                ) from exc2
+        else:
+            raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
     except Exception as exc:  # pragma: no cover - defensive catch-all
         raise DownloadError(f"Unexpected error while fetching info: {exc}", cause=exc) from exc
 
