@@ -32,8 +32,11 @@ def show_success(console: Console, message: str, title: str = "Success") -> None
     console.print(Panel(f"[success]✔ {message}[/success]", title=title, border_style="success", expand=False))
 
 
-def show_error(console: Console, message: str, title: str = "Error") -> None:
-    console.print(Panel(f"[error]✖ {message}[/error]", title=title, border_style="error", expand=False))
+def show_error(console: Console, message: str, title: str = "Error", detail: Optional[str] = None) -> None:
+    body = f"[error]✖ {message}[/error]"
+    if detail:
+        body += f"\n\n[dim]Details: {detail}[/dim]"
+    console.print(Panel(body, title=title, border_style="error", expand=False))
 
 
 def show_warning(console: Console, message: str, title: str = "Warning") -> None:
