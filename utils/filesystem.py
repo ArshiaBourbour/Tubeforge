@@ -38,6 +38,12 @@ def ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+def node_available() -> bool:
+    """True if a Node.js runtime is discoverable on PATH (needed by yt-dlp
+    to solve YouTube's playback signature/n-challenge on some videos)."""
+    return shutil.which("node") is not None
+
+
 def ensure_dir(path: str | Path) -> Path:
     p = Path(path).expanduser()
     p.mkdir(parents=True, exist_ok=True)
