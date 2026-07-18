@@ -174,8 +174,9 @@ tubeforge/
 
 This is a first stable release (`v1.0.0`). A few things to be upfront about:
 
-- Downloading requires network access to YouTube; the app cannot verify the yt-dlp extractor still matches YouTube's current site structure — if YouTube changes something, update yt-dlp (`pip install -U yt-dlp`).
-- Age-restricted and private videos generally cannot be downloaded without additional authentication (cookies), which is not currently wired into the Settings screen.
+- **YouTube's "SABR streaming" rollout (2026):** YouTube is currently forcing a newer streaming protocol that, for some videos, strips download URLs from the standard web client's formats — this is a widespread, actively-tracked yt-dlp/YouTube issue (see [yt-dlp#12482](https://github.com/yt-dlp/yt-dlp/issues/12482)) affecting many downloaders right now, not something specific to this app. TubeForge already works around this by trying the `android` client first, and always keep yt-dlp updated (`pip install -U yt-dlp`) since the project patches around YouTube's changes frequently. Installing Node.js also helps, since some videos additionally require yt-dlp's JS challenge solver.
+- Downloading requires network access to YouTube; the app cannot verify the yt-dlp extractor still matches YouTube's current site structure — if YouTube changes something, update yt-dlp.
+- Age-restricted, private, and members-only videos require authentication via Settings → Cookie Source (browser cookies or an exported `cookies.txt`).
 - Very large channels/playlists are fetched via `extract_flat`, which is fast but doesn't pre-validate every entry's availability — some entries may fail individually during batch download (TubeForge reports these as partial failures rather than aborting the whole batch).
 
 ## Contributing
