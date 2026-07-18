@@ -88,8 +88,23 @@ def download_video(
             info = ydl.extract_info(url, download=True)
             final_path = ydl.prepare_filename(info)
     except yt_dlp.utils.DownloadError as exc:
-        log.error("Video download failed for %s: %s", url, exc)
-        raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
+        if "requested format is not available" in str(exc).lower() and opts["format"] != "best":
+            # This particular video's available formats didn't intersect
+            # with our height/codec filter (common with certain live
+            # replays, some Shorts, or restricted-format videos). Retry
+            # once with a plain "best" selector before giving up.
+            log.warning("Format %r unavailable for %s, retrying with 'best'", opts["format"], url)
+            opts["format"] = "best"
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    final_path = ydl.prepare_filename(info)
+            except yt_dlp.utils.DownloadError as exc2:
+                log.error("Video download retry failed for %s: %s", url, exc2)
+                raise DownloadError(friendly_message(str(exc2)), cause=exc2) from exc2
+        else:
+            log.error("Video download failed for %s: %s", url, exc)
+            raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
     except Exception as exc:
         log.exception("Unexpected error downloading video %s", url)
         raise DownloadError(f"Unexpected error: {exc}", cause=exc) from exc
