@@ -212,6 +212,22 @@ def _no_formats_message(raw_error: str, captured_log: str = "") -> str:
     only appears there, not in the final raised exception's own text.
     """
     lowered = (raw_error + "\n" + captured_log).lower()
+    if "n challenge solving failed" in lowered or "javascript runtime" in lowered or "signature solving failed" in lowered:
+        from utils.filesystem import node_available
+
+        node_status = (
+            "Node.js is installed and was detected on this system, so that part is fine."
+            if node_available()
+            else "No JavaScript runtime (e.g. Node.js) was detected on this system — install it from https://nodejs.org."
+        )
+        return (
+            "yt-dlp couldn't solve YouTube's playback signature challenge. As of 2026 this needs "
+            "two things: (1) a JavaScript runtime — " + node_status + " (2) the 'yt-dlp-ejs' "
+            "package: run 'pip install -U yt-dlp-ejs' in the same environment/venv as yt-dlp. "
+            "On first use, yt-dlp also needs network access to download the actual solver "
+            "script — if you're behind a firewall/proxy, that download may be getting blocked. "
+            "See https://github.com/yt-dlp/yt-dlp/wiki/EJS for details."
+        )
     if "sabr" in lowered or "only images are available" in lowered or "missing a url" in lowered:
         return (
             "YouTube is currently forcing a newer streaming method (SABR) that yt-dlp's "
@@ -222,12 +238,6 @@ def _no_formats_message(raw_error: str, captured_log: str = "") -> str:
             "run its JS challenge solver, (3) if it still fails, this specific video may need "
             "to wait for yt-dlp's next fix — check https://github.com/yt-dlp/yt-dlp/issues for "
             "the current status."
-        )
-    if "n challenge solving failed" in lowered or "js runtime" in lowered or "signature solving failed" in lowered:
-        return (
-            "YouTube's playback signature/challenge could not be solved (yt-dlp needs a "
-            "JavaScript runtime for this). Install Node.js, then try again — see "
-            "https://github.com/yt-dlp/yt-dlp/wiki/EJS for details."
         )
     return (
         "This video has no downloadable formats available (it may be a live stream still in "
