@@ -103,6 +103,7 @@ class App:
                 ui.show_warning(self.console, "Operation canceled.")
             except DownloadError as exc:
                 ui.show_error(self.console, str(exc), detail=exc.detail)
+                self._maybe_show_cookie_diagnostic(exc)
             except Exception as exc:  # pragma: no cover - last line of defense
                 log.exception("Unhandled error in menu handler")
                 ui.show_error(self.console, f"Something went wrong: {exc}")
@@ -489,7 +490,46 @@ class App:
             except DownloadError as exc:
                 progress.stop()
                 ui.show_error(self.console, str(exc), detail=exc.detail)
+                self._maybe_show_cookie_diagnostic(exc)
                 return None
+
+    def _maybe_show_cookie_diagnostic(self, exc: DownloadError) -> None:
+        """
+        When a bot-check / sign-in error happens, show exactly which cookie
+        setting is currently active so it's obvious whether the config is
+        being applied at all, versus a browser that yielded zero usable
+        cookies (a very common silent failure).
+        """
+        if "bot-check" not in str(exc) and "sign-in" not in str(exc).lower():
+            return
+
+        source = self.cfg.cookie_source
+        if source == "none":
+            ui.show_info(
+                self.console,
+                "Cookie Source is currently set to 'none' — that's why no cookies were sent. "
+                "Go to Settings → Cookie Source and pick your browser, or 'file' with a cookies.txt.",
+                title="Diagnostic",
+            )
+        elif source == "file":
+            path_ok = Path(self.cfg.cookie_file_path).expanduser().exists() if self.cfg.cookie_file_path else False
+            status = "found" if path_ok else "NOT FOUND"
+            ui.show_info(
+                self.console,
+                f"Cookie Source is set to 'file' → {self.cfg.cookie_file_path or '(empty)'} ({status}). "
+                + ("" if path_ok else "That file doesn't exist — export a fresh cookies.txt and update the path in Settings."),
+                title="Diagnostic",
+            )
+        else:
+            ui.show_info(
+                self.console,
+                f"Cookie Source is set to '{source}', but yt-dlp still reports zero cookies used. "
+                "This usually means that browser has no YouTube login session, or its cookie "
+                "store couldn't be decrypted on this OS. Try: (1) log into YouTube in that exact "
+                "browser and fully close it before retrying, or (2) switch to Settings → Cookie "
+                "Source → file and use an exported cookies.txt instead (more reliable on Linux).",
+                title="Diagnostic",
+            )
 
     def _record_history(self, info, dtype: DownloadType, path: Path, out_dir: str) -> None:
         try:
