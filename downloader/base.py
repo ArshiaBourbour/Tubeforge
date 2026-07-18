@@ -120,7 +120,7 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         # videos. The android client is generally not subject to this, so
         # we always try it first; web/tv are kept as fallbacks in case a
         # given video's formats are only exposed there.
-        "extractor_args": {"youtube": {"player_client": ["android", "web", "tv"]}},
+        "extractor_args": {"youtube": {"player_client": ["android", "web", "mweb", "tv"]}},
         # yt-dlp requires explicit opt-in to download the actual JS
         # challenge-solver script bundle on first use (even with the
         # yt-dlp-ejs package installed, this is off by default). Without
@@ -282,6 +282,18 @@ def friendly_message(raw_error: str) -> str:
         ("connection refused", "The connection was refused. Check your internet connection or proxy settings."),
         ("timed out", "The connection timed out. Check your internet connection and try again."),
         ("unsupported url", "This URL is not a valid or supported YouTube link."),
+        (
+            "unable to download video data: http error 403",
+            "YouTube rejected the actual video download (formats resolved fine, but the media "
+            "server refused the request) — this usually means YouTube now wants a 'PO Token' "
+            "that TubeForge/yt-dlp doesn't currently have. Quick things to try first: (1) update "
+            "yt-dlp — 'pip install -U yt-dlp', (2) just retry — this is sometimes intermittent. "
+            "If it keeps happening: this needs a PO Token provider, which is a one-time extra "
+            "setup outside this app (installing 'bgutil-ytdlp-pot-provider' and running a small "
+            "local helper — see https://github.com/Brainicism/bgutil-ytdlp-pot-provider). This "
+            "isn't something TubeForge can fully automate for you since it involves running an "
+            "external helper process."
+        ),
     ]
     for needle, friendly in mapping:
         if needle in lowered:
