@@ -24,7 +24,7 @@ from rich.text import Text
 
 from database.models import HistoryRecord
 from downloader.base import VideoInfo
-from utils.filesystem import human_duration, human_size
+from utils.filesystem import ffmpeg_available, human_duration, human_size, node_available
 from utils.helpers import system_info
 
 
@@ -125,6 +125,10 @@ def system_info_panel() -> Panel:
     table.add_column()
     for key, value in info.items():
         table.add_row(key, value)
+    ffmpeg_status = "[success]Found[/success]" if ffmpeg_available() else "[error]Not found[/error]"
+    node_status = "[success]Found[/success]" if node_available() else "[warning]Not found (needed for some videos)[/warning]"
+    table.add_row("FFmpeg", ffmpeg_status)
+    table.add_row("Node.js", node_status)
     return Panel(table, title="[title]System Info[/title]", border_style="panel.border")
 
 
