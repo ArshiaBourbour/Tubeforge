@@ -70,16 +70,32 @@ class VideoInfo:
 
 class _SilentLogger:
     """Swallows yt-dlp's own stdout/stderr messages; we render all
-    success/error/warning states ourselves via Rich panels instead."""
+    success/error/warning states ourselves via Rich panels instead.
+
+    Also accumulates warning/debug lines into `captured` so callers can
+    inspect them after a failure — this matters because yt-dlp reports
+    important context (e.g. "YouTube is forcing SABR streaming for this
+    client") as a *warning*, separate from the final raised exception's
+    message, and we need that text to diagnose the real cause.
+    """
+
+    def __init__(self):
+        self.captured: list[str] = []
 
     def debug(self, msg: str) -> None:
+        self.captured.append(msg)
         log.debug(msg)
 
     def warning(self, msg: str) -> None:
+        self.captured.append(msg)
         log.warning(msg)
 
     def error(self, msg: str) -> None:
+        self.captured.append(msg)
         log.error(msg)
+
+    def text(self) -> str:
+        return "\n".join(self.captured)
 
 
 def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> dict[str, Any]:
@@ -139,12 +155,15 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
     except yt_dlp.utils.DownloadError as exc:
         if "requested format is not available" in str(exc).lower():
             log.warning("Default format unavailable while fetching info for %s, retrying with 'format=best'", url)
+            captured_1 = opts["logger"].text()
             opts["format"] = "best"
+            opts["logger"] = _SilentLogger()
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
                     data = ydl.extract_info(url, download=False)
             except yt_dlp.utils.DownloadError as exc2:
-                raise DownloadError(_no_formats_message(str(exc2)), cause=exc2) from exc2
+                combined_log = captured_1 + "\n" + opts["logger"].text()
+                raise DownloadError(_no_formats_message(str(exc2), combined_log), cause=exc2, detail=_tail(combined_log)) from exc2
         else:
             raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
     except Exception as exc:  # pragma: no cover - defensive catch-all
@@ -173,7 +192,13 @@ def fetch_info(url: str, cfg: Config, flat_playlist: bool = False) -> VideoInfo:
     )
 
 
-def _no_formats_message(raw_error: str) -> str:
+def _tail(text: str, max_lines: int = 6) -> str:
+    """Return the last few non-empty lines of a captured log, for display."""
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    return "\n".join(lines[-max_lines:])
+
+
+def _no_formats_message(raw_error: str, captured_log: str = "") -> str:
     """
     Used when even the most permissive format selector fails after trying
     android/web/tv clients. As of 2026, this is most often caused by
@@ -181,8 +206,12 @@ def _no_formats_message(raw_error: str) -> str:
     web client's formats — a widespread, currently ongoing yt-dlp/YouTube
     issue, not something specific to this app or this video. Give an
     accurate explanation rather than guessing DRM/livestream.
+
+    `captured_log` should include any warning/debug lines yt-dlp emitted
+    during the attempt (see _SilentLogger) — the SABR signature usually
+    only appears there, not in the final raised exception's own text.
     """
-    lowered = raw_error.lower()
+    lowered = (raw_error + "\n" + captured_log).lower()
     if "sabr" in lowered or "only images are available" in lowered or "missing a url" in lowered:
         return (
             "YouTube is currently forcing a newer streaming method (SABR) that yt-dlp's "
@@ -193,6 +222,12 @@ def _no_formats_message(raw_error: str) -> str:
             "run its JS challenge solver, (3) if it still fails, this specific video may need "
             "to wait for yt-dlp's next fix — check https://github.com/yt-dlp/yt-dlp/issues for "
             "the current status."
+        )
+    if "n challenge solving failed" in lowered or "js runtime" in lowered or "signature solving failed" in lowered:
+        return (
+            "YouTube's playback signature/challenge could not be solved (yt-dlp needs a "
+            "JavaScript runtime for this). Install Node.js, then try again — see "
+            "https://github.com/yt-dlp/yt-dlp/wiki/EJS for details."
         )
     return (
         "This video has no downloadable formats available (it may be a live stream still in "
