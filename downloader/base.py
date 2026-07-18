@@ -120,6 +120,12 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         # we always try it first; web/tv are kept as fallbacks in case a
         # given video's formats are only exposed there.
         "extractor_args": {"youtube": {"player_client": ["android", "web", "tv"]}},
+        # yt-dlp requires explicit opt-in to download the actual JS
+        # challenge-solver script bundle on first use (even with the
+        # yt-dlp-ejs package installed, this is off by default). Without
+        # this, playback signature solving silently fails and only
+        # storyboard/thumbnail "formats" are returned.
+        "remote_components": ["ejs:github", "ejs:npm"],
     }
 
     if cfg.proxy:
