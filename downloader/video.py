@@ -5,6 +5,7 @@ reporting via yt-dlp.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -89,7 +90,8 @@ def download_video(
             info = ydl.extract_info(url, download=True)
             final_path = ydl.prepare_filename(info)
     except yt_dlp.utils.DownloadError as exc:
-        if "requested format is not available" in str(exc).lower() and opts["format"] != "best":
+        exc_text = str(exc).lower()
+        if "requested format is not available" in exc_text and opts["format"] != "best":
             # This particular video's available formats didn't intersect
             # with our height/codec filter (common with certain live
             # replays, some Shorts, or restricted-format videos). Retry
@@ -107,6 +109,18 @@ def download_video(
                 log.error("Video download retry failed for %s: %s", url, exc2)
                 combined_log = captured_1 + "\n" + opts["logger"].text()
                 raise DownloadError(_no_formats_message(str(exc2), combined_log), cause=exc2, detail=_tail(combined_log)) from exc2
+        elif "http error 403" in exc_text:
+            # Sometimes transient/session-related — one quick automatic
+            # retry before surfacing the PO-token explanation to the user.
+            log.warning("Got HTTP 403 downloading %s, retrying once", url)
+            time.sleep(2)
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    final_path = ydl.prepare_filename(info)
+            except yt_dlp.utils.DownloadError as exc2:
+                log.error("Video download retry after 403 failed for %s: %s", url, exc2)
+                raise DownloadError(friendly_message(str(exc2)), cause=exc2) from exc2
         else:
             log.error("Video download failed for %s: %s", url, exc)
             raise DownloadError(friendly_message(str(exc)), cause=exc) from exc
