@@ -102,25 +102,8 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
-        # YouTube is currently (2026) rolling out "SABR" streaming, which
-        # strips download URLs from the *web* client's formats entirely —
-        # this happens independent of sign-in/cookies and shows up as
-        # "Requested format is not available" even for ordinary public
-        # videos. The android client is generally not subject to this, so
-        # we always try it first; web/tv are kept as fallbacks in case a
-        # given video's formats are only exposed there.
         "extractor_args": {"youtube": {"player_client": ["android", "web", "mweb", "tv"]}},
-        # yt-dlp requires explicit opt-in to download the actual JS
-        # challenge-solver script bundle on first use (even with the
-        # yt-dlp-ejs package installed, this is off by default). Without
-        # this, playback signature solving silently fails and only
-        # storyboard/thumbnail "formats" are returned.
         "remote_components": ["ejs:github", "ejs:npm"],
-        # yt-dlp only enables the "deno" JS runtime by default for solving
-        # YouTube's playback signature challenge — it will NOT use Node.js
-        # even if it's installed on PATH unless explicitly told to. Enable
-        # every commonly-available runtime here; yt-dlp picks whichever is
-        # actually present, in priority order (deno > node > quickjs > bun).
         "js_runtimes": {"deno": {}, "node": {}, "quickjs": {}, "bun": {}},
     }
 
@@ -129,10 +112,6 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
     if progress_hook is not None:
         opts["progress_hooks"] = [progress_hook]
 
-    # Cookie source: lets yt-dlp present an authenticated session, which
-    # resolves most "Sign in to confirm..." / bot-check walls that YouTube
-    # now shows even for ordinary public videos. This is a *separate*
-    # concern from the SABR/format issue above — both can be needed.
     if source and source not in ("none", "file"):
         opts["cookiesfrombrowser"] = (source,)
     elif source == "file" and getattr(cfg, "cookie_file_path", ""):
@@ -296,7 +275,7 @@ def build_progress_hook(callback: ProgressCallback) -> ProgressCallback:
     def _hook(d: dict) -> None:
         try:
             callback(d)
-        except Exception:  # pragma: no cover - UI callbacks must never break downloads
+        except Exception:
             log.exception("Progress callback raised an exception")
 
     return _hook
