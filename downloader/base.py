@@ -1,14 +1,3 @@
-"""
-Shared yt-dlp plumbing used by every downloader module (video/audio/playlist/
-subtitles/thumbnail). Centralizes:
-
-- metadata extraction (`fetch_info`)
-- a progress-hook protocol that the CLI's Rich progress bars subscribe to
-- common yt-dlp option scaffolding (output template, proxy, concurrency)
-- a uniform exception type so the CLI can render clean error messages
-  instead of raw tracebacks (see cli/ui.py -> show_error)
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
