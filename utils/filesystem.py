@@ -1,8 +1,3 @@
-"""
-Filesystem helpers: size formatting, disk space checks, ffmpeg detection,
-and safe directory creation used across the downloader and settings modules.
-"""
-
 from __future__ import annotations
 
 import shutil
