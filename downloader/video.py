@@ -1,8 +1,3 @@
-"""
-Video download logic: resolution selection, resume support, and progress
-reporting via yt-dlp.
-"""
-
 from __future__ import annotations
 
 import time
@@ -33,7 +28,6 @@ def _format_selector(quality: str) -> str:
     height = _HEIGHT_MAP.get(quality)
     if height is None:
         return "bestvideo+bestaudio/best"
-    # Prefer <= requested height, fall back gracefully to best available.
     return f"bestvideo[height<={height}]+bestaudio/best[height<={height}]/best"
 
 
