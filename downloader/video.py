@@ -86,10 +86,6 @@ def download_video(
     except yt_dlp.utils.DownloadError as exc:
         exc_text = str(exc).lower()
         if "requested format is not available" in exc_text and opts["format"] != "best":
-            # This particular video's available formats didn't intersect
-            # with our height/codec filter (common with certain live
-            # replays, some Shorts, or restricted-format videos). Retry
-            # once with a plain "best" selector before giving up.
             log.warning("Format %r unavailable for %s, retrying with 'best'", opts["format"], url)
             captured_1 = opts["logger"].text()
             opts["format"] = "best"
@@ -104,8 +100,6 @@ def download_video(
                 combined_log = captured_1 + "\n" + opts["logger"].text()
                 raise DownloadError(_no_formats_message(str(exc2), combined_log), cause=exc2, detail=_tail(combined_log)) from exc2
         elif "http error 403" in exc_text:
-            # Sometimes transient/session-related — one quick automatic
-            # retry before surfacing the PO-token explanation to the user.
             log.warning("Got HTTP 403 downloading %s, retrying once", url)
             time.sleep(2)
             try:
@@ -123,7 +117,6 @@ def download_video(
         raise DownloadError(f"Unexpected error: {exc}", cause=exc) from exc
 
     resolved = Path(result_path["path"] or final_path)
-    # yt-dlp reports the pre-merge filename sometimes; prefer the .mp4 sibling if present.
     mp4_candidate = resolved.with_suffix(".mp4")
     log.info("Video download complete: %s", mp4_candidate if mp4_candidate.exists() else resolved)
     return mp4_candidate if mp4_candidate.exists() else resolved
