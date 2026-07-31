@@ -1,3 +1,7 @@
+"""
+Subtitle/closed-caption download logic (manual + auto-generated captions).
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

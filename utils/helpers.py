@@ -1,3 +1,7 @@
+"""
+Small stateless helper functions shared across modules.
+"""
+
 from __future__ import annotations
 
 import platform
@@ -5,10 +9,10 @@ import sys
 from datetime import datetime
 
 try:
-    import psutil
+    import psutil  # type: ignore[import-untyped]
 
     _HAS_PSUTIL = True
-except ImportError:
+except ImportError:  # pragma: no cover - psutil is optional
     _HAS_PSUTIL = False
 
 

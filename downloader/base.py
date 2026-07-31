@@ -1,5 +1,17 @@
+"""
+Shared yt-dlp plumbing used by every downloader module (video/audio/playlist/
+subtitles/thumbnail). Centralizes:
+
+- metadata extraction (`fetch_info`)
+- a progress-hook protocol that the CLI's Rich progress bars subscribe to
+- common yt-dlp option scaffolding (output template, proxy, concurrency)
+- a uniform exception type so the CLI can render clean error messages
+  instead of raw tracebacks (see cli/ui.py -> show_error)
+"""
+
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -102,16 +114,48 @@ def base_opts(cfg: Config, progress_hook: Optional[ProgressCallback] = None) -> 
         "concurrent_fragment_downloads": max(1, cfg.concurrent_downloads),
         "retries": 5,
         "fragment_retries": 5,
-        "extractor_args": {"youtube": {"player_client": ["android", "web", "mweb", "tv"]}},
+        # NOTE: we deliberately do NOT force a specific "player_client"
+        # list here anymore. Forcing android/tv/mweb ahead of yt-dlp's own
+        # default was originally meant to dodge sign-in gating, but the
+        # android client's format URLs now frequently require a PO Token
+        # we don't have, which surfaces as "HTTP Error 403: Forbidden" on
+        # the actual download — a worse failure than the one we were
+        # working around. yt-dlp's own built-in default client selection
+        # is maintained by people tracking YouTube's changes daily; it's a
+        # better bet than a hardcoded list that goes stale. Cookies
+        # (cfg.cookie_source, below) remain the real fix for sign-in walls.
+        #
+        # yt-dlp requires explicit opt-in to download the actual JS
+        # challenge-solver script bundle on first use (even with the
+        # yt-dlp-ejs package installed, this is off by default). Without
+        # this, playback signature solving silently fails and only
+        # storyboard/thumbnail "formats" are returned.
         "remote_components": ["ejs:github", "ejs:npm"],
+        # yt-dlp only enables the "deno" JS runtime by default for solving
+        # YouTube's playback signature challenge — it will NOT use Node.js
+        # even if it's installed on PATH unless explicitly told to. Enable
+        # every commonly-available runtime here; yt-dlp picks whichever is
+        # actually present, in priority order (deno > node > quickjs > bun).
         "js_runtimes": {"deno": {}, "node": {}, "quickjs": {}, "bun": {}},
     }
+
+    # yt-dlp's own ffmpeg auto-detection can fail even when ffmpeg is on
+    # PATH and perfectly usable (confirmed via `ffmpeg -version` /
+    # `shutil.which`) — pointing it at the exact resolved path sidesteps
+    # whatever internal check is misfiring.
+    ffmpeg_path = shutil.which("ffmpeg")
+    if ffmpeg_path:
+        opts["ffmpeg_location"] = ffmpeg_path
 
     if cfg.proxy:
         opts["proxy"] = cfg.proxy
     if progress_hook is not None:
         opts["progress_hooks"] = [progress_hook]
 
+    # Cookie source: lets yt-dlp present an authenticated session, which
+    # resolves most "Sign in to confirm..." / bot-check walls that YouTube
+    # now shows even for ordinary public videos. This is a *separate*
+    # concern from the SABR/format issue above — both can be needed.
     if source and source not in ("none", "file"):
         opts["cookiesfrombrowser"] = (source,)
     elif source == "file" and getattr(cfg, "cookie_file_path", ""):
@@ -275,7 +319,7 @@ def build_progress_hook(callback: ProgressCallback) -> ProgressCallback:
     def _hook(d: dict) -> None:
         try:
             callback(d)
-        except Exception:
+        except Exception:  # pragma: no cover - UI callbacks must never break downloads
             log.exception("Progress callback raised an exception")
 
     return _hook

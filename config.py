@@ -1,3 +1,12 @@
+"""
+Application-wide configuration.
+
+Settings are persisted as JSON at ~/.tubeforge/config.json (falls back to
+settings/config.json defaults shipped with the repo on first run). The
+`Config` class is a thin, validated wrapper so the rest of the app never
+touches raw dict keys directly.
+"""
+
 from __future__ import annotations
 
 import json
@@ -38,6 +47,7 @@ class Config:
     cookie_source: str = "none"       # "none" | a browser name from COOKIE_BROWSERS | "file"
     cookie_file_path: str = ""        # used when cookie_source == "file"
 
+    # ---- persistence -----------------------------------------------------
 
     @classmethod
     def load(cls) -> "Config":

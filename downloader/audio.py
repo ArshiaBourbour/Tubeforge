@@ -1,3 +1,8 @@
+"""
+Audio-only download logic. Downloads best audio and converts via FFmpeg
+postprocessor to the user's chosen format (mp3/wav/aac/flac/m4a/opus).
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

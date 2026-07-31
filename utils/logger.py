@@ -1,3 +1,14 @@
+"""
+Centralized logging configuration for TubeForge.
+
+Provides a single `get_logger` factory that all modules use, ensuring
+consistent formatting and a persistent rotating log file under
+`~/.tubeforge/logs/tubeforge.log`. The console handler is intentionally
+quiet (WARNING+) because the Rich-powered TUI owns the screen; the file
+handler captures everything (DEBUG+) for troubleshooting and the
+in-app Log Viewer (see cli/ui.py -> show_log_viewer).
+"""
+
 from __future__ import annotations
 
 import logging

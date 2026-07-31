@@ -1,11 +1,3 @@
-"""
-Color themes for TubeForge's Rich-based interface.
-
-Each theme maps semantic style names (used throughout cli/ui.py and
-cli/menu.py) to concrete colors, so switching themes in Settings
-re-colors the entire app without touching any rendering code.
-"""
-
 from __future__ import annotations
 
 from rich.theme import Theme

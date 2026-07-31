@@ -1,3 +1,8 @@
+"""
+Thumbnail download logic — fetches the best-quality thumbnail image
+without touching video/audio streams.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,3 +1,7 @@
+"""
+Validation helpers: YouTube URL detection/classification and misc input checks.
+"""
+
 from __future__ import annotations
 
 import re

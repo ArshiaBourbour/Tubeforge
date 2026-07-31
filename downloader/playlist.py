@@ -1,4 +1,8 @@
-
+"""
+Playlist download logic. Supports downloading an entire playlist, a
+user-selected subset of indices, or a contiguous range, reusing the
+video/audio downloader functions per-entry so behavior stays consistent.
+"""
 
 from __future__ import annotations
 
@@ -13,7 +17,7 @@ from utils.logger import get_logger
 
 log = get_logger("downloader.playlist")
 
-PlaylistItemCallback = Callable[[int, int, str, str], None] 
+PlaylistItemCallback = Callable[[int, int, str, str], None]  # (index, total, title, status)
 
 
 def get_playlist_info(url: str, cfg: Config) -> VideoInfo:
