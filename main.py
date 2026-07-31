@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+"""
+TubeForge — a modern terminal YouTube downloader.
+
+Entry point: sets up the themed Rich console, plays the startup splash,
+then hands control to the main menu loop (cli/menu.py).
+
+Usage:
+    python main.py             # normal launch, animated splash
+    python main.py --no-splash # skip the splash animation (fast/CI)
+"""
+
 from __future__ import annotations
 
 import sys
@@ -26,7 +38,7 @@ def main() -> int:
     except KeyboardInterrupt:
         console.print("\n[warning]Interrupted. Goodbye![/warning]")
         return 0
-    except Exception as exc:
+    except Exception as exc:  # pragma: no cover - top-level safety net
         log.exception("Fatal error")
         console.print(f"\n[error]A fatal error occurred: {exc}[/error]")
         console.print("[dim]Check ~/.tubeforge/logs/tubeforge.log for details.[/dim]")
