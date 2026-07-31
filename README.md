@@ -19,13 +19,6 @@ A feature-rich terminal-based YouTube downloader built with **Python**, **yt-dlp
 ![Linux](https://img.shields.io/badge/Linux-Supported-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=for-the-badge&logo=apple)
 
-![License](https://img.shields.io/github/license/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-![Release](https://img.shields.io/github/v/release/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-![Stars](https://img.shields.io/github/stars/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-![Forks](https://img.shields.io/github/forks/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-![Issues](https://img.shields.io/github/issues/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-![Contributors](https://img.shields.io/github/contributors/YOUR_USERNAME/YOUR_REPOSITORY?style=for-the-badge)
-
 ![Open Source](https://img.shields.io/badge/Open%20Source-Yes-success?style=for-the-badge)
 ![Maintenance](https://img.shields.io/badge/Maintained-Yes-success?style=for-the-badge)
 ![Made With Python](https://img.shields.io/badge/Made%20with-Python-blue?style=for-the-badge&logo=python)
