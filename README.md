@@ -212,9 +212,9 @@ Before running TubeForge, make sure the following software is installed on your 
 ## Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+git clone https://github.com/ArshiaBourbour/TubeForge.git
 
-cd YOUR_REPOSITORY
+cd TubeForge
 ```
 
 ---
