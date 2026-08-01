@@ -441,4 +441,330 @@ TubeForge is optimized for
 - Efficient playlist processing
 - Reliable FFmpeg integration
 
+# 📊 Feature Comparison
+
+| Feature | TubeForge |
+|----------|:---------:|
+| Interactive Terminal UI | ✅ |
+| High Quality Downloads | ✅ |
+| Playlist Downloads | ✅ |
+| Channel Downloads | ✅ |
+| Audio Extraction | ✅ |
+| MP3 Conversion | ✅ |
+| Subtitle Downloads | ✅ |
+| Thumbnail Downloads | ✅ |
+| Download History | ✅ |
+| SQLite Database | ✅ |
+| Theme Support | ✅ |
+| Persistent Settings | ✅ |
+| Progress Bars | ✅ |
+| Logging System | ✅ |
+| FFmpeg Integration | ✅ |
+| Cross Platform | ✅ |
+| Modular Architecture | ✅ |
+| Open Source | ✅ |
+
 ---
+
+# 📜 Logging
+
+TubeForge includes a built-in logging system designed to simplify debugging and troubleshooting.
+
+Logs include:
+
+- Application startup
+- Download status
+- Errors and exceptions
+- FFmpeg output
+- yt-dlp messages
+- Configuration changes
+
+Log files are stored inside:
+
+```
+logs/
+```
+
+---
+
+# 🗂 Download History
+
+Every successful download is automatically stored in the local SQLite database.
+
+Stored information includes:
+
+- Video Title
+- Original URL
+- Download Date
+- Download Type
+- Selected Quality
+- File Path
+
+This makes it easy to keep track of previously downloaded media.
+
+---
+
+# 🧩 Architecture
+
+```
+                 User
+                   │
+                   ▼
+          Interactive CLI
+                   │
+      ┌────────────┴────────────┐
+      ▼                         ▼
+ Menu System              Configuration
+      │                         │
+      ▼                         ▼
+ Download Engine          Settings Manager
+      │
+      ▼
+      yt-dlp
+      │
+      ▼
+    FFmpeg
+      │
+      ▼
+ Downloads Folder
+      │
+      ▼
+ SQLite History Database
+```
+
+---
+
+# ⚠ Error Handling
+
+TubeForge gracefully handles many common situations, including:
+
+- Invalid URLs
+- Network failures
+- Missing FFmpeg
+- Unsupported websites
+- Playlist errors
+- Interrupted downloads
+- Permission errors
+- Existing files
+- Invalid configuration
+
+Whenever possible, meaningful error messages are displayed to help users resolve issues quickly.
+
+---
+
+# ❓ Frequently Asked Questions
+
+### Does TubeForge require FFmpeg?
+
+Only for audio extraction, format conversion, and stream merging.
+
+---
+
+### Can I download playlists?
+
+Yes.
+
+TubeForge fully supports playlist downloads.
+
+---
+
+### Can I download an entire YouTube channel?
+
+Yes.
+
+Channel downloads are supported through yt-dlp.
+
+---
+
+### Is TubeForge cross-platform?
+
+Yes.
+
+Windows, Linux, and macOS are supported.
+
+---
+
+### Where are downloaded files stored?
+
+By default:
+
+```
+downloads/
+```
+
+This location can be changed in the configuration.
+
+---
+
+### Is my data sent anywhere?
+
+No.
+
+Everything runs locally on your computer.
+
+---
+
+# 🔧 Troubleshooting
+
+## FFmpeg not found
+
+Install FFmpeg and ensure it is available in your system PATH.
+
+---
+
+## Python command not found
+
+Verify Python is installed correctly:
+
+```bash
+python --version
+```
+
+or
+
+```bash
+python3 --version
+```
+
+---
+
+## Permission denied
+
+Run the terminal with appropriate permissions or choose another output directory.
+
+---
+
+## Download failed
+
+Possible reasons:
+
+- Invalid URL
+- Private content
+- Internet connection
+- Website restrictions
+- Outdated yt-dlp
+
+Update dependencies using:
+
+```bash
+pip install -U yt-dlp
+```
+
+---
+
+# 🛣 Roadmap
+
+## Completed
+
+- Interactive CLI
+- Download Videos
+- Download Audio
+- Playlist Support
+- Channel Support
+- Subtitle Downloads
+- Thumbnail Downloads
+- SQLite History
+- Logging
+- Themes
+- Persistent Settings
+- FFmpeg Integration
+
+---
+
+## Planned
+
+- Download Queue
+- Multi-threaded Downloads
+- Automatic Updates
+- Plugin System
+- Localization
+- Download Scheduler
+- Built-in Media Player
+- GUI Version
+- Portable Build
+- Export History
+- Batch URL Import
+
+---
+
+# 🤝 Contributing
+
+Contributions are always welcome.
+
+If you'd like to contribute:
+
+1. Fork the repository.
+2. Create a new feature branch.
+3. Commit your changes.
+4. Push your branch.
+5. Open a Pull Request.
+
+Please make sure your code follows the project's style guidelines and includes appropriate documentation where necessary.
+
+---
+
+# 💡 Code Style
+
+This project follows:
+
+- PEP 8
+- Modular Design
+- Readable Code
+- Meaningful Naming
+- Consistent Formatting
+- Reusable Components
+
+---
+
+# ❤️ Acknowledgements
+
+Special thanks to the amazing open-source projects that make TubeForge possible.
+
+- Python
+- yt-dlp
+- Rich
+- FFmpeg
+- Prompt Toolkit
+- SQLite
+
+Without these projects, TubeForge would not exist.
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
+
+See the LICENSE file for more information.
+
+---
+
+# ⭐ Support the Project
+
+If you found this project useful:
+
+⭐ Star the repository
+
+🍴 Fork the project
+
+🐞 Report bugs
+
+💡 Suggest new features
+
+🤝 Contribute with Pull Requests
+
+Every contribution is greatly appreciated.
+
+---
+
+<div align="center">
+
+## 🚀 TubeForge
+
+Modern • Fast • Beautiful • Open Source
+
+Built with ❤️ using Python, Rich, yt-dlp and FFmpeg.
+
+If you like this project, don't forget to ⭐ star the repository.
+
+</div>
